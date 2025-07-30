@@ -32,35 +32,29 @@ def test_statement_generation():
     # Initialize statement generator
     statement_gen = StatementGenerator(parser, all_documents)
     
-    # Test parameters
-    role_uri = 'http://dart.fss.or.kr/role/ifrs/dart_2024-06-30_role-D310000'
+    # Test parameters for the Operating Segments report
+    role_uri = 'http://dart.fss.or.kr/role/ifrs/ifrs_8_role-D871100'
     period_end_date = '2025-03-31'
+    # For this report, we start with the base dimension, and the generator will need to find the others.
     dimensions = {
         'ifrs-full:ConsolidatedAndSeparateFinancialStatementsAxis': 'ifrs-full:ConsolidatedMember'
     }
     
-    print("=== DEBUGGING STATEMENT GENERATION ===")
+    print("=== DEBUGGING STATEMENT GENERATION FOR [D871100] ===")
     print(f"Role URI: {role_uri}")
-    print(f"Period: {period_end_date}")
-    print(f"Dimensions: {dimensions}")
-    print()
-    
-    # Check if role exists
-    if role_uri in statement_gen.role_definitions:
-        print(f"✓ Role found: {statement_gen.role_definitions[role_uri]}")
-    else:
-        print(f"✗ Role not found. Available roles:")
-        for uri, name in list(statement_gen.role_definitions.items())[:5]:
-            print(f"  - {uri}: {name}")
-        return
     
     # Check presentation links
     if role_uri in statement_gen.presentation_links:
-        print(f"✓ Found {len(statement_gen.presentation_links[role_uri])} presentation links")
+        print(f"\n✓ Found {len(statement_gen.presentation_links[role_uri])} presentation links for this role:")
         
-        # Show first few concepts
-        for i, link in enumerate(statement_gen.presentation_links[role_uri][:5]):
-            print(f"  {i+1}. {link['parent']} -> {link['child']}")
+        # Show all concepts and their relationships
+        for i, link in enumerate(statement_gen.presentation_links[role_uri]):
+            parent_label = statement_gen._get_label(link['parent'])
+            child_label = statement_gen._get_label(link['child'])
+            print(f"  {i+1}. Parent: {parent_label} ({link['parent']})")
+            print(f"     Child:  {child_label} ({link['child']})")
+            print(f"     Order:  {link['order']:.1f}")
+
     else:
         print("✗ No presentation links found for this role")
         return

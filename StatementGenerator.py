@@ -97,47 +97,124 @@ class StatementGenerator:
             return ""
         return f"{num:,.0f}"
 
-    def _generate_rows(self, role_uri, parent_concept, period_end_date, dimensions, level=0):
-        """Recursively generates the rows of a financial statement."""
+    def _generate_rows(self, role_uri, parent_concept, period_end_date, current_dimensions, level=0):
         rows = []
         children = self.child_map.get((role_uri, parent_concept), [])
-
+        
         for child_concept in children:
             indent = "    " * level
             label = self._get_label(child_concept)
             
-            # Convert underscore to colon for concept ID matching
+            # Keywords for elements that are purely structural and should never be printed.
+            structural_keywords = ["Abstract", "Table", "Axis", "Domain", "Explanatory", "LineItems"]
+            if any(keyword in child_concept for keyword in structural_keywords):
+                # We don't print the row, but we must process its children to find the real data.
+                # We pass the *same* level so indentation doesn't increase for purely structural hops.
+                rows.extend(self._generate_rows(role_uri, child_concept, period_end_date, current_dimensions, level))
+                continue
+
+            # This concept is a dimensional member that defines a new context (e.g., a specific business segment)
+            if "Member" in child_concept:
+                new_dimensions = current_dimensions.copy()
+                
+                # Heuristically determine the dimension axis this member belongs to.
+                axis = 'ifrs-full:SegmentConsolidationItemsAxis' # Default assumption
+                if 'Geographical' in child_concept:
+                    axis = 'ifrs-full:GeographicalAreasAxis'
+
+                member_id = child_concept.replace('_', ':')
+                new_dimensions[axis] = member_id
+                
+                # This is a header row, like "Bio-pharmaceuticals". Print it.
+                rows.append(f'| {indent}{label} | |')
+
+                # Now, recurse into its children, passing the NEW dimensional context.
+                rows.extend(self._generate_rows(role_uri, child_concept, period_end_date, new_dimensions, level + 1))
+                continue
+
+            # If we've reached here, it's a standard, non-dimensional line item.
+            # We fetch its value using the *current* dimensional context passed into the function.
             concept_id_for_search = child_concept.replace('_', ':')
-            value = self._get_fact_value(concept_id_for_search, period_end_date, dimensions)
+            value = self._get_fact_value(concept_id_for_search, period_end_date, current_dimensions)
             
-            # Don't show rows that are just structural or have no value
-            child_rows = self._generate_rows(role_uri, child_concept, period_end_date, dimensions, level + 1)
-            
-            if value is not None or child_rows:
-                amount_str = f"{value:,.0f}" if isinstance(value, (int, float)) else ""
+            if value is not None:
+                amount_str = f"{value:,.0f}"
                 rows.append(f'| {indent}{label} | {amount_str} |')
-                rows.extend(child_rows)
+
         return rows
 
     def generate_statement(self, role_uri, period_end_date, dimensions):
         """Generates a complete financial statement for a given role URI."""
         if role_uri not in self.role_definitions:
-            return f"# Statement for {role_uri}\\n\\n*Role URI not found.*\\n"
+            return f"Role URI not found: {role_uri}"
 
-        role_name = self.role_definitions[role_uri]
-        statement_title = f"# {role_name}\\n"
+        title = self.role_definitions[role_uri]
+        md = f"# {title}\n"
+        md += "| Account | Amount |\n"
+        md += "|---|---|\n"
         
-        all_children = {link['child'] for link in self.presentation_links.get(role_uri, [])}
-        all_parents = {link['parent'] for link in self.presentation_links.get(role_uri, [])}
-        root_concepts = sorted(list(all_parents - all_children))
+        # Find root concepts for this role
+        root_concepts = [
+            link['parent'] for link in self.presentation_links.get(role_uri, [])
+            if not any(l['child'] == link['parent'] for l in self.presentation_links.get(role_uri, []))
+        ]
+        
+        for root_concept in sorted(list(set(root_concepts))):
+             # Initial call starts with the base dimensions
+            rows = self._generate_rows(role_uri, root_concept, period_end_date, dimensions, level=0)
+            md += "\n".join(rows)
+            
+        return md
 
-        table = "| Account | Amount |\\n|---|---|\\n"
-        for root in root_concepts:
-             table_rows = self._generate_rows(role_uri, root, period_end_date, dimensions, level=0)
-             if table_rows:
-                table += "\\n".join(table_rows) + "\\n"
+    def generate_custom_operating_segments(self, role_uri, period_end_date):
+        """
+        Generates the 'Disclosure of Operating Segments' report with a hard-coded structure
+        that matches the user's provided image exactly. This is less flexible but more reliable.
+        """
+        if role_uri not in self.role_definitions:
+            return f"Role URI not found: {role_uri}"
 
-        if not root_concepts:
-            return f"{statement_title}\\n*Could not find a root concept to start the statement.*\\n"
+        title = self.role_definitions[role_uri]
+        md = f"# {title}\n"
+        md += "| 계정 | 2025-01-01 ~ 2025-03-31 |\n"
+        md += "|---|---|\n"
 
-        return statement_title + table 
+        # --- Define the structure of the report ---
+        
+        # Line items to report for each segment, using the most specific IDs available.
+        line_items = {
+            'ifrs-full:Revenue': '매출액',
+            'ifrs-full:DepreciationExpense': '감가상각비',
+            'entity00413046:AmortisationExpenseOfDisclosureOfOperatingSegmentsLineItemsOfDisclosureOfOperatingSegmentsTableOfItems': '무형자산상각비',
+            'dart:OperatingIncomeLoss': '영업이익',
+            'ifrs-full:NoncurrentAssetsOtherThanFinancialInstrumentsDeferredTaxAssetsPostemploymentBenefitAssetsAndRightsArisingUnderInsuranceContracts': '비유동자산'
+        }
+
+        # Segments (dimensions) to report on
+        segments = {
+            '연결재무제표': 'ifrs-full:OperatingSegmentsMember',
+            '바이오의약품': 'entity00413046:BiopharmaceuticalMedicinesOfOperatingSegmentsMemberOfDisclosureOfOperatingSegmentsTableOfMember',
+            '케미컬의약품': 'entity00413046:ChemicalMedicinesOfOperatingSegmentsMemberOfDisclosureOfOperatingSegmentsTableOfMember',
+            '기타부문': 'ifrs-full:AllOtherSegmentsMember',
+            '부문간 제거한 금액': 'ifrs-full:EliminationOfIntersegmentAmountsMember'
+        }
+
+        base_dimensions = {
+            'ifrs-full:ConsolidatedAndSeparateFinancialStatementsAxis': 'ifrs-full:ConsolidatedMember'
+        }
+
+        # --- Build the table row by row ---
+
+        for segment_label, segment_id in segments.items():
+            md += f"| **{segment_label}** | |\\n" 
+
+            current_dimensions = base_dimensions.copy()
+            if segment_id != 'ifrs-full:OperatingSegmentsMember':
+                 current_dimensions['ifrs-full:SegmentConsolidationItemsAxis'] = segment_id
+
+            for item_id, item_label in line_items.items():
+                value = self._get_fact_value(item_id, period_end_date, current_dimensions)
+                amount_str = f"{value:,.0f}" if value is not None else ""
+                md += f"| &nbsp;&nbsp;&nbsp;&nbsp;{item_label} | {amount_str} |\\n"
+        
+        return md.replace('\\n', '\n') 

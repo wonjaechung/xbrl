@@ -51,48 +51,43 @@ def main():
     # This now uses the documents generated in the previous step
     print("\n--- Generating Core Financial Statements ---")
     statement_gen = StatementGenerator(parser, all_documents)
-    
-    # Define the statements to generate by their role ID, found in RoleTypes.csv or the report itself.
-    # [D310000] is typically the Income Statement.
-    statements_to_generate = {
-        'Consolidated Income Statement': 'http://dart.fss.or.kr/role/ifrs/dart_2024-06-30_role-D310000'
-        # Add other statements here by their Role URI, e.g.,
-        # 'Balance Sheet': 'http://dart.fss.or.kr/role/ifrs/dart_2024-06-30_role-D210000'
-    }
-    
-    # Define the period and dimensions for the statements
     period_end_date = '2025-03-31'
-    dimensions = {
-        'ifrs-full:ConsolidatedAndSeparateFinancialStatementsAxis': 'ifrs-full:ConsolidatedMember'
-    }
+    
+    # Generate the standard Income Statement
+    income_statement_uri = 'http://dart.fss.or.kr/role/ifrs/dart_2024-06-30_role-D310000'
+    income_dimensions = {'ifrs-full:ConsolidatedAndSeparateFinancialStatementsAxis': 'ifrs-full:ConsolidatedMember'}
+    income_statement_md = statement_gen.generate_statement(income_statement_uri, period_end_date, income_dimensions)
+    income_filename = "Consolidated_Income_Statement.md"
+    income_filepath = os.path.join(output_folder, income_filename) # Save directly in output/
+    with open(income_filepath, "w", encoding="utf-8") as f:
+        f.write(income_statement_md)
+    print(f"  - Generated: {income_filename}")
 
-    for name, role_uri in statements_to_generate.items():
-        print(f"  - Generating: {name}")
-        statement_md = statement_gen.generate_statement(role_uri, period_end_date, dimensions)
-        
-        # Sanitize filename
-        filename = name.replace(" ", "_") + ".md"
-        filepath = os.path.join(output_folder, filename)
-        with open(filepath, "w", encoding="utf-8") as f:
-            f.write(statement_md)
+    # Generate the specialized Operating Segments report using the custom function
+    op_segment_uri = 'http://dart.fss.or.kr/role/ifrs/ifrs_8_role-D871100'
+    op_segment_md = statement_gen.generate_custom_operating_segments(op_segment_uri, period_end_date)
+    op_segment_filename = "Disclosure_of_Operating_Segments.md"
+    op_segment_filepath = os.path.join(output_folder, op_segment_filename) # Save directly in output/
+    if op_segment_md:
+        with open(op_segment_filepath, "w", encoding="utf-8") as f:
+            f.write(op_segment_md)
+        print(f"  - Generated: {op_segment_filename}")
 
-    # --- Step 4: Save Concept Documents ---
-    # Save individual Markdown files
-    print(f"\n--- Saving {len(all_documents)} Documents to '{output_folder}/concept_details' ---")
+    # Save Concept Documents into output/concept_details/
     concept_output_folder = os.path.join(output_folder, 'concept_details')
     os.makedirs(concept_output_folder, exist_ok=True)
+    
+    print(f"\n--- Saving {len(all_documents)} Documents to '{concept_output_folder}' ---")
 
     for concept_id, doc_content in all_documents.items():
-        # Sanitize the concept_id to be a valid filename
+        # Sanitize filename
         filename = concept_id.replace(":", "_").replace("/", "_")
-
-        # Truncate filenames that are too long to prevent filesystem errors
+        # Truncate long filenames
         if len(filename) > 200:
             filename = filename[:200]
-        
         filename += ".md"
         
-        filepath = os.path.join(concept_output_folder, filename)
+        filepath = os.path.join(concept_output_folder, filename) # Use the correct folder
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(doc_content)
     
