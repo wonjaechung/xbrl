@@ -1,0 +1,32 @@
+# Concept: entity00413046:TheAmountOfCompensationAndTotalCompensationForMajorManagementAreAsFollowsMajorManagementIncludesDirectorsIncludingNonExecutiveDirectorsAndAuditorsWhoHaveImportantAuthorityAndResponsibilityForPlanningOperationAndControlOfConsolidatedCorporateActivitiesTextBlock
+
+## Bilingual Labels
+- **EN**: entity00413046:TheAmountOfCompensationAndTotalCompensationForMajorManagementAreAsFollowsMajorManagementIncludesDirectorsIncludingNonExecutiveDirectorsAndAuditorsWhoHaveImportantAuthorityAndResponsibilityForPlanningOperationAndControlOfConsolidatedCorporateActivitiesTextBlock
+
+- **ID**: entity00413046:TheAmountOfCompensationAndTotalCompensationForMajorManagementAreAsFollowsMajorManagementIncludesDirectorsIncludingNonExecutiveDirectorsAndAuditorsWhoHaveImportantAuthorityAndResponsibilityForPlanningOperationAndControlOfConsolidatedCorporateActivitiesTextBlock
+- **Note**: This is a company-specific extension, likely related to `ifrs-full:TheAmount`.
+
+## Explanatory Notes
+```text
+주요 경영진에 대한 분류별 보상금액, 총보상금액은 다음과 같습니다. 주요경영진에는 당사의 활동 계획ㆍ운영ㆍ통제에 대한 중요한 권한과 책임을 가진 등기이사(비상임 포함)가 포함되어 있습니다.
+```
+```text
+주요 경영진에 대한 분류별 보상금액, 총보상금액은 다음과 같습니다. 주요경영진에는 연결기업의 활동의 계획ㆍ운영ㆍ통제에 대한 중요한 권한과 책임을 가진 이사(비상임 포함) 및 감사가 포함되어 있습니다.
+```
+
+---
+*Source Document: entity00413046_2025-03-31.xbrl*
+## Embeddable Text (for FAISS)
+```text
+Concept: entity00413046:TheAmountOfCompensationAndTotalCompensationForMajorManagementAreAsFollowsMajorManagementIncludesDirectorsIncludingNonExecutiveDirectorsAndAuditorsWhoHaveImportantAuthorityAndResponsibilityForPlanningOperationAndControlOfConsolidatedCorporateActivitiesTextBlock
+Bilingual Labels
+ EN: entity00413046:TheAmountOfCompensationAndTotalCompensationForMajorManagementAreAsFollowsMajorManagementIncludesDirectorsIncludingNonExecutiveDirectorsAndAuditorsWhoHaveImportantAuthorityAndResponsibilityForPlanningOperationAndControlOfConsolidatedCorporateActivitiesTextBlock
+ ID: entity00413046:TheAmountOfCompensationAndTotalCompensationForMajorManagementAreAsFollowsMajorManagementIncludesDirectorsIncludingNonExecutiveDirectorsAndAuditorsWhoHaveImportantAuthorityAndResponsibilityForPlanningOperationAndControlOfConsolidatedCorporateActivitiesTextBlock
+ Note: This is a companyspecific extension, likely related to ifrsfull:TheAmount.
+Explanatory Notes
+text
+주요 경영진에 대한 분류별 보상금액, 총보상금액은 다음과 같습니다. 주요경영진에는 당사의 활동 계획ㆍ운영ㆍ통제에 대한 중요한 권한과 책임을 가진 등기이사(비상임 포함)가 포함되어 있습니다.
+text
+주요 경영진에 대한 분류별 보상금액, 총보상금액은 다음과 같습니다. 주요경영진에는 연결기업의 활동의 계획ㆍ운영ㆍ통제에 대한 중요한 권한과 책임을 가진 이사(비상임 포함) 및 감사가 포함되어 있습니다.
+Source Document: entity00413046_20250331.xbrl
+```
